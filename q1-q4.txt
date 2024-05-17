@@ -1,0 +1,114 @@
+Q1.
+
+local function releaseStorage(player)
+    -- Sets the storage value to -1, indicating storage is being released.
+    player:setStorageValue(1000, -1)
+end
+
+function onLogout(player)
+    -- If the storage value is 1, schedule the release of storage with a delay of 1000ms
+    if player:getStorageValue(1000) == 1 then
+        addEvent(releaseStorage, 1000, player)
+    end
+    return true
+end
+
+- Added comments to clarify why `setStorageValue` is set to -1.
+- The original code is logically sound, it sets a delayed action to release storage only if a certain condition is met.
+
+Q2.
+
+function printSmallGuildNames(memberCount)
+    -- This method is supposed to print names of all guilds that have less than memberCount max members
+
+    local selectGuildQuery = "SELECT name FROM guilds WHERE max_members < %d;"
+    local resultId = db.storeQuery(string.format(selectGuildQuery, memberCount))
+
+    -- Check if the query returned results
+    if resultId then
+        -- Loop through all results and print each guild name
+        repeat
+            local guildName = result.getString(resultId, "name")
+            print(guildName)
+        until not result.next(resultId)
+        
+        -- Free the memory allocated for the result to prevent memory leaks
+        result.free(resultId)
+    end
+end
+
+- Added a loop to handle multiple results since the query might return multiple rows.
+- Included a check to ensure the result is valid.
+- Frees the allocated memory to avoid a memory leak.
+
+Q3.
+
+function removePartyMemberByName(playerId, memberName)
+    local player = Player(playerId)
+    local party = player:getParty()
+
+    if not party then
+        return
+    end
+
+    local memberToRemove = nil
+    for _, member in pairs(party:getMembers()) do
+        if member:getName() == memberName then
+            memberToRemove = member
+            break
+        end
+    end
+
+    if memberToRemove then
+        party:removeMember(memberToRemove)
+    end
+end
+
+- Renamed the function to `removePartyMemberByName` for clarity.
+- Checked if the player has a party before trying to access it.
+- Used a more efficient loop to find and remove the member by name. 
+- Optimized by breaking the loop once the member is found.
+
+Q4.
+
+void Game::addItemToPlayer(const std::string& recipient, uint16_t itemId) {
+    // Attempt to get the player by name
+    Player* player = g_game.getPlayerByName(recipient);
+    bool createdPlayer = false;
+
+    if (!player) {
+        // If player does not exist, create a new one and load player data
+        player = new Player(nullptr);
+        if (!IOLoginData::loadPlayerByName(player, recipient)) {
+            delete player;  // Cleanup to prevent memory leak
+            return;
+        }
+        createdPlayer = true;
+    }
+
+    // Create the item and check if creation was successful
+    Item* item = Item::CreateItem(itemId);
+    if (!item) {
+        if (createdPlayer) {
+            delete player;  // Cleanup to prevent memory leak
+        }
+        return;
+    }
+
+    // Attempt to add the item to the player's inbox
+    g_game.internalAddItem(player->getInbox(), item, INDEX_WHEREEVER, FLAG_NOLIMIT);
+
+    // If the player is offline, save the player's state
+    if (player->isOffline()) {
+        IOLoginData::savePlayer(player);
+    }
+
+    // If the player was created by this method, clean up allocated memory
+    if (createdPlayer) {
+        delete player;
+    }
+}
+
+//- Tracked if the player was newly created to prevent re-logging issues.
+//- Ensured deletion of `player` if it was created and not needed anymore.
+//- Ensured deletion of `player` when `Item::CreateItem` fails to prevent memory leaks.
