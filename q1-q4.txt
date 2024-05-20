@@ -2,7 +2,10 @@ Q1.
 
 local function releaseStorage(player)
     -- Sets the storage value to -1, indicating storage is being released.
-    player:setStorageValue(1000, -1)
+    -- Check if the player object is valid to prevent potential errors
+    if player then
+        player:setStorageValue(1000, -1)
+    end
 end
 
 function onLogout(player)
@@ -15,31 +18,41 @@ end
 
 - Added comments to clarify why `setStorageValue` is set to -1.
 - The original code is logically sound, it sets a delayed action to release storage only if a certain condition is met.
+- Added player object validation
 
 Q2.
 
 function printSmallGuildNames(memberCount)
     -- This method is supposed to print names of all guilds that have less than memberCount max members
-
     local selectGuildQuery = "SELECT name FROM guilds WHERE max_members < %d;"
-    local resultId = db.storeQuery(string.format(selectGuildQuery, memberCount))
+    -- Define the SQL query template for selecting guild names with fewer than `memberCount` max members
+    local queryString = string.format(selectGuildQuery, memberCount)
+    -- Format the query string with the provided memberCount
+    local resultId = db.storeQuery(queryString)
+    -- Execute the query and store the result in resultId
 
-    -- Check if the query returned results
-    if resultId then
-        -- Loop through all results and print each guild name
+    if resultId ~= nil then
+        -- Check if the query returned any results
         repeat
             local guildName = result.getString(resultId, "name")
+            -- Get the guild name from the current row in the result set
             print(guildName)
+            -- Print the guild name
         until not result.next(resultId)
-        
-        -- Free the memory allocated for the result to prevent memory leaks
+        -- Move to the next row in the result set; continue until there are no more rows
         result.free(resultId)
+        -- Free the result storage to avoid memory leaks
+    else
+        print("No guilds found with less than " .. memberCount .. " members.")
+        -- Print a message if no guilds were found with fewer than memberCount members
     end
 end
 
 - Added a loop to handle multiple results since the query might return multiple rows.
 - Included a check to ensure the result is valid.
 - Frees the allocated memory to avoid a memory leak.
+- Added error handling
+- Improved comments
 
 Q3.
 
@@ -48,18 +61,21 @@ function removePartyMemberByName(playerId, memberName)
     local party = player:getParty()
 
     if not party then
+        -- If the player does not have a party, exit the function
         return
     end
 
     local memberToRemove = nil
     for _, member in pairs(party:getMembers()) do
         if member:getName() == memberName then
+            -- If the member name matches, store the member in memberToRemove
             memberToRemove = member
             break
         end
     end
 
     if memberToRemove then
+        -- If a matching member is found, remove them from the party
         party:removeMember(memberToRemove)
     end
 end
@@ -68,6 +84,7 @@ end
 - Checked if the player has a party before trying to access it.
 - Used a more efficient loop to find and remove the member by name. 
 - Optimized by breaking the loop once the member is found.
+- Improved comments
 
 Q4.
 
@@ -89,8 +106,9 @@ void Game::addItemToPlayer(const std::string& recipient, uint16_t itemId) {
     // Create the item and check if creation was successful
     Item* item = Item::CreateItem(itemId);
     if (!item) {
+        // Cleanup the player if we created it in this method
         if (createdPlayer) {
-            delete player;  // Cleanup to prevent memory leak
+            delete player;
         }
         return;
     }
@@ -109,6 +127,10 @@ void Game::addItemToPlayer(const std::string& recipient, uint16_t itemId) {
     }
 }
 
-//- Tracked if the player was newly created to prevent re-logging issues.
-//- Ensured deletion of `player` if it was created and not needed anymore.
-//- Ensured deletion of `player` when `Item::CreateItem` fails to prevent memory leaks.
+// - Added comments for each segment
+// - Attempt to get a player by their name.
+// - If the player does not exist, create a new player instance and attempt to load the player data; handle cleanup if loading fails.
+// - Attempt to create the item; if creation fails, handle player cleanup to prevent memory leaks.
+// - If item creation is successful, add the item to the player's inbox.
+// - If the player is offline, ensure their state is saved to prevent data loss.
+// - If the player was created within this method, clean up the allocated memory to prevent memory leaks.
