@@ -1,0 +1,23 @@
+JumpGameLabel < Label
+  font: verdana-11px-monochrome
+  background-color: alpha
+  text-offset: 42 3
+  focusable: true
+  height: 36
+
+  $focus:
+    background-color: #ffffff22
+    color: #ffffff
+
+JumpGameWindow < MainWindow
+  id: jumpgameWindow
+  !text: tr('Jump Game')
+  size: 300 300
+  @onEscape: toggle()
+
+  Button
+    id: buttonCancel
+    !text: tr('Jump!')
+    width: 50
+    height: 30
+    @onClick: onButtonClick()

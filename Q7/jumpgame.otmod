@@ -1,0 +1,9 @@
+Module
+  name: game_jumpgame
+  description: Jump game!
+  author: Lagarrigue, Vicente
+  website: https://github.com/ippacko/
+  sandboxed: true
+  scripts: [ jumpgame ]
+  @onLoad: init()
+  @onUnload: terminate()
